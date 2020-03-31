@@ -13,3 +13,8 @@ if __name__ == '__main__':
     print(luiz.nome)
     for f in luiz.filhos:
         print(f.nome)
+    luciano.sobrenome = 'Luiz Filho'
+    del luciano.filhos
+    print(luciano.sobrenome)
+    print(luciano.__dict__)
+    print(luiz.__dict__)

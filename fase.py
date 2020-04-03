@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from itertools import chain
-from atores import ATIVO
-
+from atores import ATIVO, Passaro
 
 VITORIA = 'VITORIA'
 DERROTA = 'DERROTA'
@@ -43,7 +42,7 @@ class Fase():
 
         :param obstaculos:
         """
-        pass
+        self._obstaculos.extend(obstaculos)
 
     def adicionar_porco(self, *porcos):
         """
@@ -51,7 +50,11 @@ class Fase():
 
         :param porcos:
         """
-        pass
+        for porco in porcos:
+            porco.intervalo_colisao = self.intervalo_de_colisao
+
+        self._porcos.extend(porcos)
+
 
     def adicionar_passaro(self, *passaros):
         """
@@ -59,7 +62,11 @@ class Fase():
 
         :param passaros:
         """
-        pass
+        for passaro in passaros:
+            passaro.intervalo_colisao = self.intervalo_de_colisao
+
+        self._passaros.extend(passaros)
+
 
     def status(self):
         """
@@ -73,6 +80,23 @@ class Fase():
 
         :return:
         """
+
+        has_passaro_ativo = False
+        has_porco_ativo = False
+        for passaro in self._passaros:
+            if passaro.status == ATIVO:
+                has_passaro_ativo = True
+                break
+
+        for porco in self._porcos:
+            if porco.status == ATIVO:
+                has_porco_ativo = True
+                break
+
+        if not has_porco_ativo:
+            return VITORIA
+        if not has_passaro_ativo:
+            return DERROTA
         return EM_ANDAMENTO
 
     def lancar(self, angulo, tempo):
@@ -86,7 +110,10 @@ class Fase():
         :param angulo: ângulo de lançamento
         :param tempo: Tempo de lançamento
         """
-        pass
+        for passaro in self._passaros:
+            if passaro.foi_lancado() is False:
+                passaro.lancar(angulo, tempo)
+                break
 
 
     def calcular_pontos(self, tempo):
@@ -98,10 +125,21 @@ class Fase():
         :param tempo: tempo para o qual devem ser calculados os pontos
         :return: objeto do tipo Ponto
         """
-        pontos=[self._transformar_em_ponto(a) for a in self._passaros+self._obstaculos+self._porcos]
+
+        pontos = [self._transformar_em_ponto_passaros(a, tempo) for a in self._passaros]
+        pontos.extend([self._transformar_em_ponto(a, tempo) for a in self._obstaculos+self._porcos])
 
         return pontos
 
-    def _transformar_em_ponto(self, ator):
+    def _transformar_em_ponto_passaros(self, ator, tempo):
+
+        for porco in self._porcos+self._obstaculos:
+            ator.colidir(porco, self.intervalo_de_colisao)
+
+        ator.colidir_com_chao()
+        return self._transformar_em_ponto(ator, tempo)
+
+    def _transformar_em_ponto(self, ator, tempo):
+        ator.calcular_posicao(tempo)
         return Ponto(ator.x, ator.y, ator.caracter())
 
